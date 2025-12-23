@@ -63,7 +63,7 @@ struct replay {
 	int *ramp_buf;
 	char **play_count;
 	struct channel *channels;
-	struct module *module;
+	const struct module *module;
 };
 
 static int exp_2( int x ) {
@@ -86,7 +86,7 @@ static int log_2( int x ) {
 	return y;
 }
 
-static char* data_ascii( struct data *data, int offset, int length, char *dest ) {
+static char* data_ascii( const struct data *data, int offset, int length, char *dest ) {
 	int idx, chr;
 	memset( dest, 32, length );
 	if( offset > data->length ) {
@@ -104,7 +104,7 @@ static char* data_ascii( struct data *data, int offset, int length, char *dest )
 	return dest;
 }
 
-static int data_s8( struct data *data, int offset ) {
+static int data_s8( const struct data *data, int offset ) {
 	int value = 0;
 	if( offset < data->length ) {
 		value = data->buffer[ offset ];
@@ -113,7 +113,7 @@ static int data_s8( struct data *data, int offset ) {
 	return value;
 }
 
-static int data_u8( struct data *data, int offset ) {
+static int data_u8( const struct data *data, int offset ) {
 	int value = 0;
 	if( offset < data->length ) {
 		value = data->buffer[ offset ] & 0xFF;
@@ -121,7 +121,7 @@ static int data_u8( struct data *data, int offset ) {
 	return value;
 }
 
-static int data_u16be( struct data *data, int offset ) {
+static int data_u16be( const struct data *data, int offset ) {
 	int value = 0;
 	if( offset + 1 < data->length ) {
 		value = ( ( data->buffer[ offset ] & 0xFF ) << 8 )
@@ -130,7 +130,7 @@ static int data_u16be( struct data *data, int offset ) {
 	return value;
 }
 
-static int data_u16le( struct data *data, int offset ) {
+static int data_u16le( const struct data *data, int offset ) {
 	int value = 0;
 	if( offset + 1 < data->length ) {
 		value = ( data->buffer[ offset ] & 0xFF )
@@ -139,7 +139,7 @@ static int data_u16le( struct data *data, int offset ) {
 	return value;
 }
 
-static unsigned int data_u32le( struct data *data, int offset ) {
+static unsigned int data_u32le( const struct data *data, int offset ) {
 	unsigned int value = 0;
 	if( offset + 3 < data->length ) {
 		value = ( data->buffer[ offset ] & 0xFF )
@@ -150,7 +150,7 @@ static unsigned int data_u32le( struct data *data, int offset ) {
 	return value;
 }
 
-static void data_sam_s8( struct data *data, int offset, int count, short *dest ) {
+static void data_sam_s8( const struct data *data, int offset, int count, short *dest ) {
 	int idx, amp, length = data->length;
 	char *buffer = data->buffer;
 	if( offset > length ) {
@@ -165,7 +165,7 @@ static void data_sam_s8( struct data *data, int offset, int count, short *dest )
 	}
 }
 
-static void data_sam_s16le( struct data *data, int offset, int count, short *dest ) {
+static void data_sam_s16le( const struct data *data, int offset, int count, short *dest ) {
 	int idx, amp, length = data->length;
 	char *buffer = data->buffer;
 	if( offset > length ) {
@@ -180,7 +180,7 @@ static void data_sam_s16le( struct data *data, int offset, int count, short *des
 	}
 }
 
-static int envelope_next_tick( struct envelope *envelope, int tick, int key_on ) {
+static int envelope_next_tick( const struct envelope *envelope, int tick, int key_on ) {
 	tick++;
 	if( envelope->looped && tick >= envelope->loop_end_tick ) {
 		tick = envelope->loop_start_tick;
@@ -191,7 +191,7 @@ static int envelope_next_tick( struct envelope *envelope, int tick, int key_on )
 	return tick;
 }
 	
-static int envelope_calculate_ampl( struct envelope *envelope, int tick ) {
+static int envelope_calculate_ampl( const struct envelope *envelope, int tick ) {
 	int idx, point, dt, da;
 	int ampl = envelope->points_ampl[ envelope->num_points - 1 ];
 	if( tick < envelope->points_tick[ envelope->num_points - 1 ] ) {
@@ -255,7 +255,7 @@ void dispose_module( struct module *module ) {
 	free( module );
 }
 
-static struct module* module_load_xm( struct data *data, char *message ) {
+static struct module* module_load_xm( const struct data *data, char *message ) {
 	int delta_env, offset, next_offset, idx, entry;
 	int num_rows, num_notes, pat_data_len, pat_data_offset;
 	int sam, sam_head_offset, sam_data_bytes, sam_data_samples;
@@ -479,7 +479,7 @@ static struct module* module_load_xm( struct data *data, char *message ) {
 	return module;
 }
 
-static struct module* module_load_s3m( struct data *data, char *message ) {
+static struct module* module_load_s3m( const struct data *data, char *message ) {
 	int idx, module_data_idx, inst_offset, flags;
 	int version, sixteen_bit, tune, signed_samples;
 	int stereo_mode, default_pan, channel_map[ 32 ];
@@ -687,7 +687,7 @@ static struct module* module_load_s3m( struct data *data, char *message ) {
 	return module;
 }
 
-static struct module* module_load_mod( struct data *data, char *message ) {
+static struct module* module_load_mod( const struct data *data, char *message ) {
 	int idx, pat, module_data_idx, pat_data_len, pat_data_idx;
 	int period, key, ins, effect, param, fine_tune;
 	int sample_length, loop_start, loop_length;
@@ -863,7 +863,7 @@ static struct module* module_load_mod( struct data *data, char *message ) {
 
 /* Allocate and initialize a module from the specified data, returns NULL on error.
    Message must point to a 64-character buffer to receive error messages. */
-struct module* module_load( struct data *data, char *message ) {
+struct module* module_load( const struct data *data, char *message ) {
 	char ascii[ 16 ];
 	struct module* module;
 	if( !memcmp( data_ascii( data, 0, 16, ascii ), "Extended Module:", 16 ) ) {
@@ -876,7 +876,7 @@ struct module* module_load( struct data *data, char *message ) {
 	return module;
 }
 
-static void pattern_get_note( struct pattern *pattern, int row, int chan, struct note *dest ) {
+static void pattern_get_note( const struct pattern *pattern, int row, int chan, struct note *dest ) {
 	int offset = ( row * pattern->num_channels + chan ) * 5;
 	if( offset >= 0 && row < pattern->num_rows && chan < pattern->num_channels ) {
 		dest->key = pattern->data[ offset ];
@@ -1568,7 +1568,7 @@ static void channel_row( struct channel *channel, struct note *note ) {
 	channel_update_envelopes( channel );
 }
 
-static void channel_resample( struct channel *channel, int *mix_buf,
+static void channel_resample( const struct channel *channel, int *mix_buf,
 		int offset, int count, int sample_rate, int interpolate ) {
 	struct sample *sample = channel->sample;
 	int l_gain, r_gain, sam_idx, sam_fra, step;
@@ -1647,7 +1647,7 @@ static void replay_row( struct replay *replay ) {
 	struct note note;
 	struct pattern *pattern;
 	struct channel *channel;
-	struct module *module = replay->module;
+	const struct module *module = replay->module;
 	if( replay->next_row < 0 ) {
 		replay->break_pos = replay->seq_pos + 1;
 		replay->next_row = 0;
@@ -1781,7 +1781,7 @@ static int replay_tick( struct replay *replay ) {
 	return count;
 }
 
-static int module_init_play_count( struct module *module, char **play_count ) {
+static int module_init_play_count( const struct module *module, char **play_count ) {
 	int idx, pat, rows, len = 0;
 	for( idx = 0; idx < module->sequence_len; idx++ ) {
 		pat = module->sequence[ idx ];
@@ -1797,7 +1797,7 @@ static int module_init_play_count( struct module *module, char **play_count ) {
 /* Set the pattern in the sequence to play. The tempo is reset to the default. */
 void replay_set_sequence_pos( struct replay *replay, int pos ) {
 	int idx;
-	struct module *module = replay->module;
+	const struct module *module = replay->module;
 	if( pos >= module->sequence_len ) {
 		pos = 0;
 	}
@@ -1836,7 +1836,7 @@ void dispose_replay( struct replay *replay ) {
 }
 
 /* Allocate and initialize a replay with the specified sampling rate and interpolation. */
-struct replay* new_replay( struct module *module, int sample_rate, int interpolation ) {
+struct replay* new_replay( const struct module *module, int sample_rate, int interpolation ) {
 	struct replay *replay = calloc( 1, sizeof( struct replay ) );
 	if( replay ) {
 		replay->module = module;
@@ -1937,11 +1937,11 @@ int replay_get_audio( struct replay *replay, int *mix_buf, int mute ) {
 }
 
 /* Returns the currently playing pattern in the sequence.*/
-int replay_get_sequence_pos( struct replay *replay ) {
+int replay_get_sequence_pos( const struct replay *replay ) {
 	return replay->seq_pos;
 }
 
 /* Returns the currently playing row in the pattern. */
-int replay_get_row( struct replay *replay ) {
+int replay_get_row( const struct replay *replay ) {
 	return replay->row;
 }
