@@ -152,7 +152,7 @@ static unsigned int data_u32le( const struct data *data, int offset ) {
 
 static void data_sam_s8( const struct data *data, int offset, int count, short *dest ) {
 	int idx, amp, length = data->length;
-	char *buffer = data->buffer;
+	const char *buffer = data->buffer;
 	if( offset > length ) {
 		offset = length;
 	}
@@ -167,7 +167,7 @@ static void data_sam_s8( const struct data *data, int offset, int count, short *
 
 static void data_sam_s16le( const struct data *data, int offset, int count, short *dest ) {
 	int idx, amp, length = data->length;
-	char *buffer = data->buffer;
+	const char *buffer = data->buffer;
 	if( offset > length ) {
 		offset = length;
 	}

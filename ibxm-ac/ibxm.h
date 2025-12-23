@@ -4,7 +4,7 @@
 extern const char *IBXM_VERSION;
 
 struct data {
-	char *buffer;
+	const char *buffer;
 	int length;
 };
 
